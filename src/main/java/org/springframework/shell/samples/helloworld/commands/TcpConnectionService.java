@@ -37,6 +37,39 @@ public class TcpConnectionService implements CommandMarker {
 
     }
 
+    @CliCommand(value = "get request raw", help = "Get the last, or the specified request")
+    public String getRequest(
+            @CliOption(key = { "position" }, mandatory = false, help = "the position of the request") final Integer position) {
+
+        String returnValue = "";
+
+        try {
+
+            boolean finished = false;
+
+            JSONObject requestJsonObject = getRequest(position, Command.GET_REQUEST);
+            String response = getResponse(requestJsonObject);
+
+            handleExit(response);
+
+            if (response != null) {
+                JSONObject responseObject = new JSONObject(response);
+                if (responseObject.has("requestBody")) {
+                    returnValue = ((JSONObject) responseObject.get("requestHeaders")).toString(2);
+                    returnValue += "\n";
+                    returnValue += (String) responseObject.get("requestBody");
+                } else {
+                    returnValue = (String) responseObject.get("errorMessage");
+                }
+            }
+
+        } catch (Exception e) {
+            return new JSONObject(e).toString(2);
+        }
+
+        return returnValue + "\n";
+    }
+
     @CliCommand(value = "get request body", help = "Get the body of the last, or the specified request")
     public String getRequestBody(
             @CliOption(key = { "position" }, mandatory = false, help = "the position of the request") final Integer position) {
