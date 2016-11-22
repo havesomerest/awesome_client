@@ -37,9 +37,9 @@ public class TcpConnectionService implements CommandMarker {
 
     }
 
-    @CliCommand(value = "get request body", help = "Print a simple hello world message")
+    @CliCommand(value = "get request body", help = "Get the body of the last, or the specified request")
     public String getRequestBody(
-            @CliOption(key = { "position" }, mandatory = false, help = "The hello world message") final Integer position) {
+            @CliOption(key = { "position" }, mandatory = false, help = "the position of the request") final Integer position) {
 
         String returnValue = "";
 
@@ -68,9 +68,9 @@ public class TcpConnectionService implements CommandMarker {
         return returnValue + "\n";
     }
 
-    @CliCommand(value = "get request headers", help = "Print a simple hello world message")
+    @CliCommand(value = "get request headers", help = "Get the header of the last, or the specified request")
     public String getRequestHeaders(
-            @CliOption(key = { "position" }, mandatory = false, help = "The hello world message") final Integer position) {
+            @CliOption(key = { "position" }, mandatory = false, help = "the position of the request") final Integer position) {
 
         String returnValue = "";
 
