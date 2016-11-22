@@ -16,14 +16,17 @@ import java.net.Socket;
 @Component
 public class TcpConnectionService implements CommandMarker {
 
+    public static final String HOSTNAME = "localhost";
+    public static final int PORT_NUMBER = 4444;
+
     private Socket kkSocket;
     private PrintWriter socketWriter;
     private BufferedReader socketReader;
 
     @PostConstruct
     public void init() {
-        String hostName = "localhost";
-        int portNumber = 4444;
+        String hostName = HOSTNAME;
+        int portNumber = PORT_NUMBER;
 
         try {
             kkSocket = new Socket(hostName, portNumber);
@@ -44,6 +47,13 @@ public class TcpConnectionService implements CommandMarker {
         String returnValue = "";
 
         try {
+
+            if (kkSocket.isClosed()) {
+                kkSocket = new Socket(HOSTNAME, PORT_NUMBER);
+                socketWriter = new PrintWriter(kkSocket.getOutputStream(), true);
+                socketReader = new BufferedReader(
+                        new InputStreamReader(kkSocket.getInputStream()));
+            }
 
             boolean finished = false;
 
