@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -16,6 +17,8 @@ import java.net.Socket;
 public class TcpConnectionService implements CommandMarker {
 
     private Socket kkSocket;
+    private PrintWriter socketWriter;
+    private BufferedReader socketReader;
 
     @PostConstruct
     public void init() {
@@ -24,6 +27,9 @@ public class TcpConnectionService implements CommandMarker {
 
         try {
             kkSocket = new Socket(hostName, portNumber);
+            socketWriter = new PrintWriter(kkSocket.getOutputStream(), true);
+            socketReader = new BufferedReader(
+                    new InputStreamReader(kkSocket.getInputStream()));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -31,43 +37,88 @@ public class TcpConnectionService implements CommandMarker {
 
     }
 
-    @CliCommand(value = "get request", help = "Print a simple hello world message")
-    public String simple(
-            @CliOption(key = { "position" }, mandatory = false, help = "The hello world message") final Integer pos) {
+    @CliCommand(value = "get request body", help = "Print a simple hello world message")
+    public String getRequestBody(
+            @CliOption(key = { "position" }, mandatory = false, help = "The hello world message") final Integer position) {
 
-        Integer position = pos;
-            String fromServer, fromUser;
+        String returnValue = "";
+
         try {
-            PrintWriter socketWriter = new PrintWriter(kkSocket.getOutputStream(), true);
-            BufferedReader socketReader = new BufferedReader(
-                    new InputStreamReader(kkSocket.getInputStream()));
 
             boolean finished = false;
 
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("command", "LIST_REQUESTS");
-            jsonObject.put("position", position);
+            JSONObject requestJsonObject = getRequest(position, Command.GET_REQUEST);
+            String response = getResponse(requestJsonObject);
 
-            socketWriter.println(jsonObject.toString());
-            fromServer = socketReader.readLine();
+            handleExit(response);
 
-            if (fromServer != null && fromServer.equals("BYE.")) {
-                kkSocket.close();
-                finished = true;
+            if (response != null) {
+                JSONObject responseObject = new JSONObject(response);
+                if (responseObject.has("requestBody")) {
+                    returnValue = (String) responseObject.get("requestBody");
+                } else {
+                    returnValue = (String) responseObject.get("errorMessage");
+                }
             }
+
         } catch (Exception e) {
             return new JSONObject(e).toString(2);
         }
+
+        return returnValue + "\n";
+    }
+
+    @CliCommand(value = "get request headers", help = "Print a simple hello world message")
+    public String getRequestHeaders(
+            @CliOption(key = { "position" }, mandatory = false, help = "The hello world message") final Integer position) {
+
         String returnValue = "";
 
-        if (fromServer != null) {
-            JSONObject fromServerObject = new JSONObject(fromServer);
-            returnValue = fromServerObject.toString(2);
-        } else {
-            returnValue = fromServer;
+        try {
+
+            boolean finished = false;
+
+            JSONObject requestJsonObject = getRequest(position, Command.GET_REQUEST);
+            String response = getResponse(requestJsonObject);
+
+            handleExit(response);
+
+            if (response != null) {
+                JSONObject responseObject = new JSONObject(response);
+                if (responseObject.has("requestHeaders")) {
+                    returnValue = ((JSONObject) responseObject.get("requestHeaders")).toString(2);
+                } else {
+                    returnValue = (String) responseObject.get("errorMessage");
+                }
+            }
+
+        } catch (Exception e) {
+            return new JSONObject(e).toString(2);
         }
 
         return returnValue + "\n";
+    }
+
+    private void handleExit(String response) throws IOException {
+        boolean finished;
+        if (response != null && response.equals("BYE.")) {
+            kkSocket.close();
+            finished = true;
+        }
+    }
+
+    private String getResponse(JSONObject requestJsonObject) throws IOException {
+        String response;
+        socketWriter.println(requestJsonObject.toString());
+        response = socketReader.readLine();
+        return response;
+    }
+
+    private JSONObject getRequest(Integer position, Command command) {
+        JSONObject requestJsonObject = new JSONObject();
+        requestJsonObject.put("command", command);
+        requestJsonObject.put("position", position);
+        return requestJsonObject;
     }
 
 }
