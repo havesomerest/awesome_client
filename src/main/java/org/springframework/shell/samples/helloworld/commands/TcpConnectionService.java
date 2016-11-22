@@ -86,7 +86,13 @@ public class TcpConnectionService implements CommandMarker {
             if (response != null) {
                 JSONObject responseObject = new JSONObject(response);
                 if (responseObject.has("requestHeaders")) {
-                    returnValue = ((JSONObject) responseObject.get("requestHeaders")).toString(2);
+                    JSONObject requestHeaders = (JSONObject) responseObject.get("requestHeaders");
+                    StringBuilder sb = new StringBuilder();
+
+                    requestHeaders.keySet().forEach(key -> {
+                        sb.append(key + ": " + requestHeaders.get(key) + "\n");
+                    });
+                    returnValue = sb.toString();
                 } else {
                     returnValue = (String) responseObject.get("errorMessage");
                 }
